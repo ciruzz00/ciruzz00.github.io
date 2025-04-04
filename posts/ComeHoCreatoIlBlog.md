@@ -46,7 +46,7 @@ Tutto questo avviene senza dover toccare manualmente i file HTML.
 ├── convert.sh          # Script Bash per conversione e aggiornamento
 └── .github/
     └── workflows/
-        └── blog.yml    # GitHub Actions workflow
+        └── deploy.yml    # GitHub Actions workflow
 ```
 
 ---
