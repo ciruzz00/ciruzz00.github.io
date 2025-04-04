@@ -21,9 +21,12 @@ jobs:
       - name: Install Pandoc
         run: sudo apt-get install pandoc
 
-      - name: run script for convert and add post
-        run: chmod +x convert.sh && ./convert.sh
+      - name: permission
+        run: chmod +x convert.sh 
 
+      - name: run script convert and add post
+        run: ./convert.sh
+        
       # Esegui git pull prima del commit e push
       - name: Pull latest changes from remote
         run: |
