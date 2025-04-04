@@ -19,7 +19,7 @@ jobs:
 
       # Installa Pandoc
       - name: Install Pandoc
-        run: sudo apt-get install pandoc
+        run: sudo apt-get install pandoc awk
 
       - name: permission
         run: chmod +x convert.sh 
