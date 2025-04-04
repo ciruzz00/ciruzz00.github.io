@@ -22,7 +22,7 @@ jobs:
         run: sudo apt-get install pandoc
 
       - name: run script for convert and add post
-        run: ./convert.sh
+        run: chmod +x convert.sh && ./convert.sh
 
       # Esegui git pull prima del commit e push
       - name: Pull latest changes from remote
