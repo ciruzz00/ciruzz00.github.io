@@ -1,0 +1,76 @@
+/* Stile generale per il corpo della pagina */
+body {
+    background-color: #121212;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Stile per il titolo del blog */
+h1, h2, h3 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+/* Stile per il contenuto degli articoli (senza <article>) */
+.content {
+    max-width: 800px; /* Limita la larghezza dell'articolo */
+    width: 100%;
+    background-color: #1e1e1e;
+    padding: 30px;
+    border-radius: 10px;
+    margin-top: 20px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    text-align: justify; /* Giustifica il testo */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Giustificazione del testo all'interno degli articoli */
+.content p {
+    text-align: justify; /* Giustifica il testo */
+    text-justify: inter-word; /* Utilizza lo spazio tra le parole per una giustificazione migliore */
+    line-height: 1.8; /* Aumenta l'altezza della linea per una lettura più comoda */
+    font-size: 1.125rem; /* Font leggermente più grande per migliorare la leggibilità */
+    color: #e0e0e0;
+    margin-bottom: 20px;
+}
+
+/* Centrare le immagini e limitare la larghezza */
+.content img {
+    max-width: 100%; /* Limita l'immagine alla larghezza del contenitore */
+    height: auto; /* Mantieni la proporzione dell'immagine */
+    display: block; /* Rendi l'immagine un blocco per poterla centrare */
+    margin: 20px auto; /* Spazio sopra e sotto, e centratura orizzontale */
+}
+
+/* Aggiungi uno stile per i link all'interno degli articoli */
+.content a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.content a:hover {
+    text-decoration: underline;
+}
+
+/* Stile per il pulsante "indietro" */
+button {
+    margin-top: 20px;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
