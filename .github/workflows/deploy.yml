@@ -21,10 +21,10 @@ jobs:
       - name: Install Pandoc
         run: sudo apt-get install pandoc gawk
 
-      - name: permission
+      - name: Set permissions for convert script
         run: chmod +x convert.sh 
 
-      - name: run script convert and add post
+      - name: Run convert script
         run: ./convert.sh
         
       # Esegui git pull prima del commit e push
@@ -37,8 +37,8 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add public/blog.html
-          git diff --staged --quiet || git commit -m "Aggiornato blog.html con nuovi post"
+          git add public/
+          git diff --staged --quiet || git commit -m "Aggiornato blog.html e post"
           git push || echo "No changes to push"
         continue-on-error: true
         env:
@@ -47,15 +47,22 @@ jobs:
       # Crea la GitHub Page (pubblica su gh-pages)
       - name: Create GitHub Pages
         run: |
-          # Checkout della branch gh-pages, creando se non esiste
-          git checkout -B gh-pages
-
-          # Copia i file generati nella directory di root
+          # Crea un nuovo branch temporaneo
+          git checkout --orphan gh-pages-temp
+          
+          # Rimuovi tutti i file dalla staging area
+          git rm -rf --cached .
+          
+          # Aggiungi solo i file dalla directory public/
           cp -r public/* .
-
-          # Aggiungi i cambiamenti
+          
+          # Aggiungi i file al branch
           git add .
+          
+          # Commit dei file
           git commit -m "Update GitHub Pages with new posts"
-
-          # Push alla branch gh-pages
-          git push --force origin gh-pages
+          
+          # Push al branch gh-pages, sostituendolo se esiste
+          git push --force origin gh-pages-temp:gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
