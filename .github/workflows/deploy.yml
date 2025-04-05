@@ -47,14 +47,23 @@ jobs:
       # Crea la GitHub Page (pubblica su gh-pages)
       - name: Create GitHub Pages
         run: |
-          # Crea un nuovo branch temporaneo
-          git checkout --orphan gh-pages-temp
+          # Crea una directory temporanea
+          mkdir -p /tmp/gh-pages
           
-          # Rimuovi tutti i file dalla staging area
+          # Copia solo i file dalla directory public/ nella directory temporanea
+          cp -r public/* /tmp/gh-pages/
+          
+          # Crea un branch completamente nuovo
+          git checkout --orphan gh-pages
+          
+          # Rimuovi tutti i file dall'area di staging
           git rm -rf --cached .
           
-          # Aggiungi solo i file dalla directory public/
-          cp -r public/* .
+          # Rimuovi tutti i file dalla directory di lavoro
+          rm -rf *
+          
+          # Copia i file dalla directory temporanea
+          cp -r /tmp/gh-pages/* .
           
           # Aggiungi i file al branch
           git add .
@@ -62,7 +71,7 @@ jobs:
           # Commit dei file
           git commit -m "Update GitHub Pages with new posts"
           
-          # Push al branch gh-pages, sostituendolo se esiste
-          git push --force origin gh-pages-temp:gh-pages
+          # Push al branch gh-pages
+          git push --force origin gh-pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
