@@ -24,8 +24,8 @@ for file in posts/*.md; do
 done
 
 # Verifica che il file blog.html esista
-if [ ! -f "public/blog.html" ]; then
-    echo "File public/blog.html non trovato!"
+if [ ! -f "public/blog/index.html" ]; then
+    echo "File public/blog/index.html non trovato!"
     exit 1
 fi
 
@@ -57,19 +57,19 @@ for file in posts/*.md; do
     fi
 
     echo "Aggiunto link per $title ($post_basename.html)"
-    links+="<li><a href='posts/$post_basename.html'>$title</a></li>\n"
+    links+="<li><a href='../posts/$post_basename.html'>$title</a></li>\n"
 done
 
 # Inserisce i link tra <ul> e </ul> in blog.html
 if [ -n "$links" ]; then
-    echo "Aggiornamento di public/blog.html con i nuovi link"
+    echo "Aggiornamento di public/blog/index.html con i nuovi link"
     temp_file=$(mktemp)
     awk -v links="$links" '
       /<ul>/ { print; print links; next }
       /<\/ul>/ { print; next }
       { print }
-    ' public/blog.html > "$temp_file" && mv "$temp_file" public/blog.html
-    echo "Blog.html aggiornato con successo!"
+    ' public/blog/index.html > "$temp_file" && mv "$temp_file" public/blog/index.html
+    echo "Blog aggiornato con successo!"
 else
-    echo "Nessun link da aggiungere a blog.html"
+    echo "Nessun link da aggiungere a blog"
 fi
