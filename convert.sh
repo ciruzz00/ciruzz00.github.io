@@ -40,14 +40,22 @@ for file in posts/*.md; do
     
     post_basename=$(basename "$file" .md)
     
-    # Estrae il titolo dal file markdown (prima riga che inizia con #)
-    title=$(grep -m 1 "^# " "$file" | sed 's/^# //')
+    # Estrae prima il titolo dal blocco YAML
+    title=$(awk '
+        /^---$/ { in_yaml = !in_yaml; next }
+        in_yaml && /^title:/ { print substr($0, index($0,$2)); exit }
+    ' "$file")
     
-    # Se non trova un titolo, usa il nome del file
+    # Se non trovato, cerca una riga che inizia con #
+    if [ -z "$title" ]; then
+        title=$(grep -m 1 "^#\+ " "$file" | sed 's/^#\+ //')
+    fi
+
+    # Se ancora vuoto, usa il nome del file
     if [ -z "$title" ]; then
         title="$post_basename"
     fi
-    
+
     echo "Aggiunto link per $title ($post_basename.html)"
     links+="<li><a href='posts/$post_basename.html'>$title</a></li>\n"
 done
