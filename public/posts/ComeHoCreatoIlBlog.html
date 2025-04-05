@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>come ho creato il blog</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../css/style-post.css" />
+<link rel="icon" type="image/png" href="../img/favicon.ico">
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">come ho creato il blog</h1>
+</header>
+<section id="lidea" class="content">
+<h1>l’idea</h1>
+<p>Volevo un modo semplice, leggero e completamente automatizzato per
+gestire un piccolo blog all’interno del mio sito portfolio statico
+ospitato su GitHub Pages.<br />
+L’obiettivo era poter scrivere articoli in Markdown, caricarli in una
+cartella del repository e lasciare che tutto il resto – dalla
+conversione all’aggiornamento del sito – venisse gestito in
+automatico.</p>
+<p>Così è nato un <strong>mini-CMS statico</strong> realizzato con:</p>
+<ul>
+<li>📝 Markdown per scrivere i post</li>
+<li>🔁 Pandoc per convertirli in HTML</li>
+<li>⚙️ Uno script Bash per aggiornare i file</li>
+<li>🤖 GitHub Actions per automatizzare tutto</li>
+<li>💻 HTML/CSS puri per semplicità e portabilità</li>
+</ul>
+<hr />
+<h2 id="come-funziona">🚀 Come funziona</h2>
+<p>Ogni volta che carico un file <code>.md</code> nella cartella
+<code>posts/</code> e faccio push sulla branch <code>main</code>, una
+GitHub Action:</p>
+<ol type="1">
+<li>Installa Pandoc</li>
+<li>Converte tutti i <code>.md</code> in <code>.html</code> con uno
+stile CSS personalizzato</li>
+<li>Aggiorna automaticamente l’indice degli articoli nella pagina
+<code>blog.html</code></li>
+<li>Fa commit e push dei cambiamenti</li>
+<li>Pubblica il sito aggiornato sulla branch <code>gh-pages</code>,
+visibile come GitHub Page</li>
+</ol>
+<p>Tutto questo avviene senza dover toccare manualmente i file HTML.</p>
+<hr />
+<h2 id="struttura-del-progetto">🗂️ Struttura del progetto</h2>
+<pre><code>.
+├── posts/              # Post in formato Markdown
+├── public/             # HTML generato per i post
+│   ├── blog.html       # Pagina con l’elenco dei post
+│   └── posts/          # Articoli convertiti in HTML
+├── css/
+│   └── style-post.css  # Stile dei post
+├── convert.sh          # Script Bash per conversione e aggiornamento
+└── .github/
+    └── workflows/
+        └── deploy.yml    # GitHub Actions workflow</code></pre>
+<hr />
+<h2 id="il-workflow-github-actions">🔧 Il workflow GitHub Actions</h2>
+<p>Questo è il cuore dell’automazione: quando viene eseguito un push su
+<code>main</code>, parte una pipeline che si occupa di tutto.</p>
+<pre class="yaml"><code>name: Convert MD to HTML and Update Blog and create Github Page
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pandoc
+        run: sudo apt-get install pandoc
+      - name: Convert and update posts
+        run: chmod +x convert.sh &amp;&amp; ./convert.sh
+      - name: Pull latest changes
+        run: git pull origin main
+      - name: Commit changes
+        run: |
+          git config --global user.name &quot;GitHub Actions&quot;
+          git config --global user.email &quot;actions@github.com&quot;
+          git add public/blog.html
+          git commit -m &quot;Aggiornato blog.html con nuovi post&quot;
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to GitHub Pages
+        run: |
+          git checkout -B gh-pages
+          cp -r public/* .
+          git add .
+          git commit -m &quot;Update GitHub Pages with new posts&quot;
+          git push --force origin gh-pages</code></pre>
+<hr />
+<h2 id="lo-script-convert.sh">🖥️ Lo script <code>convert.sh</code></h2>
+<p>Questo script converte i file Markdown in HTML con Pandoc, aggiunge
+il CSS e aggiorna automaticamente l’indice degli articoli.</p>
+<pre class="bash"><code>#!/bin/bash
+
+# Converte ogni file .md in .html
+for file in posts/*.md; do
+    output_file=&quot;public/posts/$(basename &quot;$file&quot; .md).html&quot;
+    pandoc &quot;$file&quot; -o &quot;$output_file&quot; --standalone --no-highlight --to=html5 --css=&quot;../css/style-post.css&quot;
+done
+
+# Aggiunge favicon
+sed -i &#39;/&lt;link rel=&quot;stylesheet&quot; href=&quot;\.\.\/css\/style-post\.css&quot; \/&gt;/a \
+&lt;link rel=&quot;icon&quot; type=&quot;image/png&quot; href=&quot;../img/favicon.ico&quot;&gt;&#39; $output_file
+
+# Genera l&#39;elenco dei post
+links=&quot;&quot;
+for post in public/posts/*.html; do
+    post_name=$(basename &quot;$post&quot; .html)
+    links=&quot;$links&lt;li&gt;&lt;a href=&#39;posts/$post_name.html&#39;&gt;$post_name&lt;/a&gt;&lt;/li&gt;&quot;
+done
+
+# Sostituisce il contenuto tra &lt;ul&gt; e &lt;/ul&gt; in blog.html con i nuovi link
+sed -i &#39;/&lt;ul&gt;/,/&lt;\/ul&gt;/c\&lt;ul&gt;\n&#39;&quot;$links&quot;&#39;\n&lt;/ul&gt;&#39; public/blog.html</code></pre>
+<hr />
+<h2 id="risultato">✨ Risultato</h2>
+<p>Ogni articolo viene pubblicato semplicemente facendo push del file
+Markdown.<br />
+Non serve scrivere HTML, modificare l’indice o fare deploy
+manuale.<br />
+Tutto viene gestito in automatico – ed è perfettamente integrato con
+GitHub Pages.</p>
+<blockquote>
+<p>È un’idea semplice, ma funziona bene per gestire un microblog
+personale o una sezione articoli in modo minimalista.</p>
+</blockquote>
+<hr />
+<h2 id="prossimi-miglioramenti-possibili">Prossimi miglioramenti
+possibili</h2>
+<ul>
+<li>Supporto per categorie o RSS</li>
+<li>Visualizzazione in ordine cronologico</li>
+</ul>
+</section>
+</body>
+</html>
