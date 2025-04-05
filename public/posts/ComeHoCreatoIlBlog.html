@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>come ho creato il blog</title>
+  <title>Come ho creato il blog</title>
   <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
@@ -27,7 +27,7 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">come ho creato il blog</h1>
+<h1 class="title">Come ho creato il blog</h1>
 </header>
 <div class="content">
 <h2 id="lidea">l’idea</h2>
@@ -202,14 +202,22 @@ for file in posts/*.md; do
     
     post_basename=$(basename &quot;$file&quot; .md)
     
-    # Estrae il titolo dal file markdown (prima riga che inizia con #)
-    title=$(grep -m 1 &quot;^# &quot; &quot;$file&quot; | sed &#39;s/^# //&#39;)
+    # Estrae prima il titolo dal blocco YAML
+    title=$(awk &#39;
+        /^---$/ { in_yaml = !in_yaml; next }
+        in_yaml &amp;&amp; /^title:/ { print substr($0, index($0,$2)); exit }
+    &#39; &quot;$file&quot;)
     
-    # Se non trova un titolo, usa il nome del file
+    # Se non trovato, cerca una riga che inizia con #
+    if [ -z &quot;$title&quot; ]; then
+        title=$(grep -m 1 &quot;^#\+ &quot; &quot;$file&quot; | sed &#39;s/^#\+ //&#39;)
+    fi
+
+    # Se ancora vuoto, usa il nome del file
     if [ -z &quot;$title&quot; ]; then
         title=&quot;$post_basename&quot;
     fi
-    
+
     echo &quot;Aggiunto link per $title ($post_basename.html)&quot;
     links+=&quot;&lt;li&gt;&lt;a href=&#39;posts/$post_basename.html&#39;&gt;$title&lt;/a&gt;&lt;/li&gt;\n&quot;
 done
