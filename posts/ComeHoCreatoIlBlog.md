@@ -4,7 +4,7 @@ title: come ho creato il blog
 
 <div class="content">
 
-# l'idea
+## l'idea
 
 Volevo un modo semplice, leggero e completamente automatizzato per gestire un piccolo blog all’interno del mio sito portfolio statico ospitato su GitHub Pages.  
 L’obiettivo era poter scrivere articoli in Markdown, caricarli in una cartella del repository e lasciare che tutto il resto – dalla conversione all’aggiornamento del sito – venisse gestito in automatico.
@@ -63,35 +63,76 @@ permissions:
 
 on:
   push:
-    branches: [main]
-
+    branches:
+      - main
+   
 jobs:
   convert:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      # Checkout del repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Installa Pandoc
       - name: Install Pandoc
-        run: sudo apt-get install pandoc
-      - name: Convert and update posts
-        run: chmod +x convert.sh && ./convert.sh
-      - name: Pull latest changes
-        run: git pull origin main
+        run: sudo apt-get install pandoc gawk
+
+      - name: Set permissions for convert script
+        run: chmod +x convert.sh 
+
+      - name: Run convert script
+        run: ./convert.sh
+        
+      # Esegui git pull prima del commit e push
+      - name: Pull latest changes from remote
+        run: |
+          git pull origin main
+
+      # Fai il commit e push dei cambiamenti
       - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add public/blog.html
-          git commit -m "Aggiornato blog.html con nuovi post"
-          git push
+          git add public/
+          git diff --staged --quiet || git commit -m "Aggiornato blog.html e post"
+          git push || echo "No changes to push"
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Deploy to GitHub Pages
+
+      # Crea la GitHub Page (pubblica su gh-pages)
+      - name: Create GitHub Pages
         run: |
-          git checkout -B gh-pages
-          cp -r public/* .
+          # Crea una directory temporanea
+          mkdir -p /tmp/gh-pages
+          
+          # Copia solo i file dalla directory public/ nella directory temporanea
+          cp -r public/* /tmp/gh-pages/
+          
+          # Crea un branch completamente nuovo
+          git checkout --orphan gh-pages
+          
+          # Rimuovi tutti i file dall'area di staging
+          git rm -rf --cached .
+          
+          # Rimuovi tutti i file dalla directory di lavoro
+          rm -rf *
+          
+          # Copia i file dalla directory temporanea
+          cp -r /tmp/gh-pages/* .
+          
+          # Aggiungi i file al branch
           git add .
+          
+          # Commit dei file
           git commit -m "Update GitHub Pages with new posts"
+          
+          # Push al branch gh-pages
           git push --force origin gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ---
@@ -103,25 +144,71 @@ Questo script converte i file Markdown in HTML con Pandoc, aggiunge il CSS e agg
 ```bash
 #!/bin/bash
 
-# Converte ogni file .md in .html
+# Assicura che la directory esista
+mkdir -p public/posts
+
+# Converte tutti i file .md in .html
 for file in posts/*.md; do
+    # Verifica che ci siano file .md
+    if [ ! -f "$file" ]; then
+        echo "Nessun file markdown trovato in posts/"
+        break
+    fi
+    
+    # Crea la directory di output se non esiste
     output_file="public/posts/$(basename "$file" .md).html"
+    mkdir -p "$(dirname "$output_file")"
+    
+    echo "Conversione di $file in $output_file"
     pandoc "$file" -o "$output_file" --standalone --no-highlight --to=html5 --css="../css/style-post.css"
+
+    # Aggiunge favicon subito dopo il link al CSS
+    sed -i '/<link rel="stylesheet" href="\.\.\/css\/style-post\.css" \/>/a \
+<link rel="icon" type="image/png" href="../img/favicon.ico">' "$output_file"
 done
 
-# Aggiunge favicon
-sed -i '/<link rel="stylesheet" href="\.\.\/css\/style-post\.css" \/>/a \
-<link rel="icon" type="image/png" href="../img/favicon.ico">' $output_file
+# Verifica che il file blog.html esista
+if [ ! -f "public/blog.html" ]; then
+    echo "File public/blog.html non trovato!"
+    exit 1
+fi
 
-# Genera l'elenco dei post
+# Genera elenco dei nuovi post con titoli
 links=""
-for post in public/posts/*.html; do
-    post_name=$(basename "$post" .html)
-    links="$links<li><a href='posts/$post_name.html'>$post_name</a></li>"
+for file in posts/*.md; do
+    # Verifica che ci siano file .md
+    if [ ! -f "$file" ]; then
+        echo "Nessun file markdown trovato in posts/"
+        break
+    fi
+    
+    post_basename=$(basename "$file" .md)
+    
+    # Estrae il titolo dal file markdown (prima riga che inizia con #)
+    title=$(grep -m 1 "^# " "$file" | sed 's/^# //')
+    
+    # Se non trova un titolo, usa il nome del file
+    if [ -z "$title" ]; then
+        title="$post_basename"
+    fi
+    
+    echo "Aggiunto link per $title ($post_basename.html)"
+    links+="<li><a href='posts/$post_basename.html'>$title</a></li>\n"
 done
 
-# Sostituisce il contenuto tra <ul> e </ul> in blog.html con i nuovi link
-sed -i '/<ul>/,/<\/ul>/c\<ul>\n'"$links"'\n</ul>' public/blog.html
+# Inserisce i link tra <ul> e </ul> in blog.html
+if [ -n "$links" ]; then
+    echo "Aggiornamento di public/blog.html con i nuovi link"
+    temp_file=$(mktemp)
+    awk -v links="$links" '
+      /<ul>/ { print; print links; next }
+      /<\/ul>/ { print; next }
+      { print }
+    ' public/blog.html > "$temp_file" && mv "$temp_file" public/blog.html
+    echo "Blog.html aggiornato con successo!"
+else
+    echo "Nessun link da aggiungere a blog.html"
+fi
 ```
 
 ---
