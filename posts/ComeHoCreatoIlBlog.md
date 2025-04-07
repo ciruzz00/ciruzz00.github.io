@@ -236,4 +236,5 @@ Tutto viene gestito in automatico – ed è perfettamente integrato con GitHub P
 - Supporto per categorie o RSS
 - Visualizzazione in ordine cronologico
 
+[Blog](../blog/) [Home](../)
 </div>
