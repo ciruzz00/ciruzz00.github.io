@@ -1,0 +1,52 @@
+html {
+  font-size: 90%;
+}
+body {
+    background-color: #121212;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+.card {
+    background-color: #1e1e1e;
+    padding: 20px;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+.card:hover {
+    border: 2px solid #007bff;
+    transform: scale(1.05);
+}
+.large-card {
+    margin-top: 80px;
+    grid-column: span 2;
+}
+.vertical-card {
+    grid-row: span 2;
+}
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+.blog-list {
+    list-style: none;
+    padding: 0;
+}
+.blog-list li {
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+img {
+    width: 200px;  
+    height: 200px; 
+    object-fit: cover;
+}

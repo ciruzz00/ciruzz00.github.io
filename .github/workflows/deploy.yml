@@ -1,0 +1,77 @@
+name: Convert MD to HTML and Update Blog and create Github Page
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - main
+   
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout del repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Installa Pandoc
+      - name: Install Pandoc
+        run: sudo apt-get install pandoc gawk
+
+      - name: Set permissions for convert script
+        run: chmod +x convert.sh 
+
+      - name: Run convert script
+        run: ./convert.sh
+        
+      # Esegui git pull prima del commit e push
+      - name: Pull latest changes from remote
+        run: |
+          git pull origin main
+
+      # Fai il commit e push dei cambiamenti
+      - name: Commit changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add public/
+          git diff --staged --quiet || git commit -m "Aggiornato blog.html e post"
+          git push || echo "No changes to push"
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Crea la GitHub Page (pubblica su gh-pages)
+      - name: Create GitHub Pages
+        run: |
+          # Crea una directory temporanea
+          mkdir -p /tmp/gh-pages
+          
+          # Copia solo i file dalla directory public/ nella directory temporanea
+          cp -r public/* /tmp/gh-pages/
+          
+          # Crea un branch completamente nuovo
+          git checkout --orphan gh-pages
+          
+          # Rimuovi tutti i file dall'area di staging
+          git rm -rf --cached .
+          
+          # Rimuovi tutti i file dalla directory di lavoro
+          rm -rf *
+          
+          # Copia i file dalla directory temporanea
+          cp -r /tmp/gh-pages/* .
+          
+          # Aggiungi i file al branch
+          git add .
+          
+          # Commit dei file
+          git commit -m "Update GitHub Pages with new posts"
+          
+          # Push al branch gh-pages
+          git push --force origin gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
